@@ -1,10 +1,14 @@
 import os
+from tkinter import EXCEPTION
 import psycopg2
 from flask import Blueprint, request
 from dotenv import load_dotenv
+from flask_cors import CORS
+
 
 load_dotenv()  # loads variables from .env file into environment
 users = Blueprint("users", __name__)
+CORS(users)
 url = os.environ.get("DATABASE_URL")
 connection = psycopg2.connect(url)
 
@@ -12,15 +16,21 @@ connection = psycopg2.connect(url)
 @users.route("/", methods=["POST"])
 def new_user():
     data = request.get_json()
+    print(data)
     data_values = list(data.values())
+    print("data_values",data_values)
     email = data["email"]
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute(
-                "INSERT INTO users (first_name,last_name,email,password,country,verified) VALUES (%s,%s,%s,%s,%s,%s) ",
+            try: 
+                cursor.execute(
+                "INSERT INTO users (first_name,last_name,email,password,country) VALUES (%s,%s,%s,%s,%s) ",
                 data_values,
             )
-    return {"status": f"User {email} created"}, 201
+                return {"status": f"User {email} created"}, 201
+            except Exception as error:
+                return {"error": f'{error}'}, 400
+      
 
 
 # GET ALL ROUTE
@@ -33,7 +43,6 @@ def users_data():
             # transform result
             columns = list(cursor.description)
             result = cursor.fetchall()
-            print(result)
             # make dict
             results = []
             for row in result:
@@ -54,6 +63,25 @@ def one_user_data(id):
             # result = cursor.fetchone()[0]
             columns = list(cursor.description)
             result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+# Find by email
+@users.route("/findbyemail/<email>", methods=["GET"])
+def one_user_existence(email):
+    results = []
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT email FROM users WHERE email='{email}'")
+            # result = cursor.fetchone()[0]
+            columns = list(cursor.description)
+            result = cursor.fetchall()
             print(result)
             # make dict
             results = []
@@ -63,6 +91,25 @@ def one_user_data(id):
                     row_dict[col.name] = row[i]
                 results.append(row_dict)
             return results
+
+# Verify login 
+@users.route("/login", methods=["POST"])
+def verify_user():
+    data = request.get_json()
+    data_values = list(data.values())
+    email = data["email"]
+    with connection:
+        with connection.cursor() as cursor:
+            try: 
+                cursor.execute(
+                "SELECT user_id, email, password FROM users WHERE email=%s AND password=%s",
+                data_values,
+                )
+                result = cursor.fetchall()
+                id = result[0][0]
+                return {"id":f"{id}","msg": f"User {email} logged in!"}, 200
+            except Exception as error:
+                return {"error": f"{error}"}, 400
 
 
 # UPDATE ROUTE

@@ -2,9 +2,12 @@ import os
 import psycopg2
 from flask import Blueprint, request
 from dotenv import load_dotenv
+from flask_cors import CORS
+
 
 load_dotenv()  # loads variables from .env file into environment
 shoes = Blueprint("shoes", __name__)
+CORS(shoes)
 url = os.environ.get("DATABASE_URL")
 connection = psycopg2.connect(url)
 
@@ -27,7 +30,6 @@ def new_shoe():
 # GET ALL ROUTE
 @shoes.route("/", methods=["GET"])
 def shoes_data():
-
     with connection:
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM shoes")
@@ -88,3 +90,4 @@ def del_one_shoe(id):
         with connection.cursor() as cursor:
             cursor.execute(f"DELETE FROM shoes WHERE shoe_id='{id}'")
             return {"msg": f"User id {id} deleted"}, 200
+
