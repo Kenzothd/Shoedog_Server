@@ -29,18 +29,20 @@ connection = psycopg2.connect(url)
 def new_listing(id):
     data = request.get_json()
     shoe_brand = data["shoe_brand"]
-    shoe_model= data["shoe_model"]
-    shoe_size= data["shoe_size"]
-    listing_price= data["listing_price"]
+    shoe_model = data["shoe_model"]
+    shoe_size = data["shoe_size"]
+    listing_price = data["listing_price"]
     with connection:
-         try: 
+        try:
             with connection.cursor() as cursor:
-                cursor.execute(f"WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_brand='{shoe_brand}' AND shoe_model='{shoe_model}' AND shoe_size='{shoe_size}') INSERT INTO listings (user_listing_id,shoe_id,listing_price) SELECT '{id}',shoe_id,'{listing_price}' FROM rows RETURNING listings.*;")
-                results=[]
-                check_alert(cursor,results)
+                cursor.execute(
+                    f"WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_brand='{shoe_brand}' AND shoe_model='{shoe_model}' AND shoe_size='{shoe_size}') INSERT INTO listings (user_listing_id,shoe_id,listing_price) SELECT '{id}',shoe_id,'{listing_price}' FROM rows RETURNING listings.*;"
+                )
+                results = []
+                check_alert(cursor, results)
             return results, 201
-         except Exception as error:
-                return {"error": f"{error}"}, 400
+        except Exception as error:
+            return {"error": f"{error}"}, 400
 
 
 # GET ALL ROUTE (old)
@@ -61,12 +63,14 @@ def new_listing(id):
 #                 results.append(row_dict)
 #             return results
 
-# GET ALL ROUTE (new) with shoe and user details(remove password KIV)
-@listings.route("/", methods=["GET"])
+# GET ALL ROUTE (new) if sold = true with volume of ALl,1D,1M,1Y
+@listings.route("/volume", methods=["GET"])
 def listings_data():
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM listings l JOIN shoes s ON l.shoe_id = s.shoe_id JOIN users u ON l.user_listing_id = u.user_id;")
+            cursor.execute(
+                "WITH volumes AS (SELECT shoe_id, SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '1 month' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as one_month_total_volume,SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '3 month' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as three_month_total_volume,SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '6 month' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as six_month_total_volume, SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '1 year' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as one_year_total_volume FROM listings WHERE listing_date_close < NOW()GROUP BY shoe_id)SELECT main.shoe_id, sub.shoe_brand, sub.shoe_model, sub.shoe_img, main.lowest_listing_price, main.total_volume, volumes.one_month_total_volume, volumes.three_month_total_volume, volumes.six_month_total_volume, volumes.one_year_total_volume FROM shoes sub JOIN (SELECT shoe_id, MIN(listing_price) as lowest_listing_price, SUM(listing_price) as total_volume FROM listings WHERE listing_date_close < NOW() GROUP BY shoe_id) main ON main.shoe_id = sub.shoe_id JOIN volumes ON volumes.shoe_id = main.shoe_id ORDER BY main.total_volume DESC;"
+            )
             # transform result
             columns = list(cursor.description)
             result = cursor.fetchall()
@@ -79,12 +83,15 @@ def listings_data():
                 results.append(row_dict)
             return results
 
+
 # GET ALL FOR SPECIFIC USER
 @listings.route("user/<id>", methods=["GET"])
 def listings_user_data(id):
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT * FROM listings l JOIN shoes s ON l.shoe_id = s.shoe_id JOIN users u ON l.user_listing_id = u.user_id WHERE l.user_listing_id = {id};")
+            cursor.execute(
+                f"SELECT * FROM listings l JOIN shoes s ON l.shoe_id = s.shoe_id JOIN users u ON l.user_listing_id = u.user_id WHERE l.user_listing_id = {id};"
+            )
             # transform result
             columns = list(cursor.description)
             result = cursor.fetchall()
@@ -96,6 +103,7 @@ def listings_user_data(id):
                     row_dict[col.name] = row[i]
                 results.append(row_dict)
             return results
+
 
 # # READ ROUTE(old)
 # @listings.route("/<id>", methods=["GET"])
@@ -122,18 +130,21 @@ def one_listing_data(id):
     results = []
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT * FROM listings l JOIN shoes s ON l.shoe_id = s.shoe_id JOIN users u ON l.user_listing_id = u.user_id WHERE listing_id='{id}';")
+            cursor.execute(
+                f"SELECT * FROM listings l JOIN shoes s ON l.shoe_id = s.shoe_id JOIN users u ON l.user_listing_id = u.user_id WHERE listing_id='{id}';"
+            )
             # result = cursor.fetchone()[0]
             columns = list(cursor.description)
             result = cursor.fetchall()
             # make dict
-           
+
             for row in result:
                 row_dict = {}
                 for i, col in enumerate(columns):
                     row_dict[col.name] = row[i]
-                
+
             return row_dict
+
 
 # UPDATE ROUTE
 @listings.route("/<id>", methods=["PUT"])
