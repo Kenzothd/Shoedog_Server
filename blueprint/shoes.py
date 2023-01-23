@@ -52,7 +52,9 @@ def one_user_data(id):
     results = []
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT * FROM shoes WHERE shoe_id='{id}'")
+            cursor.execute(
+                f"WITH all_time_query AS (SELECT shoes.shoe_id,shoes.shoe_brand,shoes.shoe_model,shoes.shoe_description,shoes.shoe_img,shoes.shoe_likes,shoes.shoe_release_date,shoes.shoe_retail_price,MIN(listing_price) AS all_time_lowest_listing_price, MAX(listing_price) AS all_time_highest_listing_price, ROUND((AVG(listing_price))) AS average_listing_price, ROUND(STDDev(listing_price)) AS volatility, COUNT(listing_price) as number_of_sales FROM shoes JOIN listings ON shoes.shoe_id = listings.shoe_id WHERE shoes.shoe_id ='{id}' AND listing_date_close < NOW() GROUP BY shoes.shoe_id, shoes.shoe_brand, shoes.shoe_model) SELECT all_time_query.*,MIN(listing_price) FILTER (WHERE listing_date_close >=  NOW() - INTERVAL '1 year') AS one_year_lowest_listing_price,MAX(listing_price) FILTER (WHERE listing_date_close >=  NOW() - INTERVAL '1 year') AS one_year_highest_listing_price FROM all_time_query JOIN listings ON all_time_query.shoe_id = listings.shoe_id GROUP BY all_time_query.shoe_id, all_time_query.shoe_brand, all_time_query.shoe_model, all_time_query.shoe_description, all_time_query.shoe_img, all_time_query.shoe_likes, all_time_query.shoe_release_date, all_time_query.shoe_retail_price, all_time_query.all_time_lowest_listing_price, all_time_query.all_time_highest_listing_price, all_time_query.average_listing_price, all_time_query.volatility, all_time_query.number_of_sales;"
+            )
             # result = cursor.fetchone()[0]
             columns = list(cursor.description)
             result = cursor.fetchall()
@@ -90,4 +92,3 @@ def del_one_shoe(id):
         with connection.cursor() as cursor:
             cursor.execute(f"DELETE FROM shoes WHERE shoe_id='{id}'")
             return {"msg": f"User id {id} deleted"}, 200
-
