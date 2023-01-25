@@ -65,11 +65,32 @@ def new_listing(id):
 
 # GET ALL ROUTE (new) if sold = true with volume of ALl,1D,1M,1Y
 @listings.route("/volume", methods=["GET"])
-def listings_data():
+def listings_data_volume():
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 "WITH volumes AS (SELECT shoe_id, SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '1 month' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as one_month_total_volume,SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '3 month' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as three_month_total_volume,SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '6 month' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as six_month_total_volume, SUM(CASE WHEN listing_date_close >= NOW() - INTERVAL '1 year' AND listing_date_close < NOW() THEN listing_price ELSE 0 END) as one_year_total_volume FROM listings WHERE listing_date_close < NOW()GROUP BY shoe_id)SELECT main.shoe_id, sub.shoe_brand, sub.shoe_model, sub.shoe_img, main.lowest_listing_price, main.total_volume, volumes.one_month_total_volume, volumes.three_month_total_volume, volumes.six_month_total_volume, volumes.one_year_total_volume FROM shoes sub JOIN (SELECT shoe_id, MIN(listing_price) as lowest_listing_price, SUM(listing_price) as total_volume FROM listings WHERE listing_date_close < NOW() GROUP BY shoe_id) main ON main.shoe_id = sub.shoe_id JOIN volumes ON volumes.shoe_id = main.shoe_id ORDER BY main.total_volume DESC;"
+            )
+            # transform result
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+
+# GET ALL sold = false listings FOR SPECIFIC shoe
+@listings.route("/false/<id>", methods=["GET"])
+def listings_data_sold_false(id):
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT listings.*, users.username,users.verified FROM listings JOIN users  ON listings.user_id = users.user_id WHERE listings.SHOE_ID = 1  AND listings.listing_date < NOW() AND listings.sold = FALSE  ORDER BY listings.listing_date DESC;"
             )
             # transform result
             columns = list(cursor.description)
