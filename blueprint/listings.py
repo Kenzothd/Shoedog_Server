@@ -84,13 +84,55 @@ def listings_data_volume():
             return results
 
 
-# GET ALL sold = false listings FOR SPECIFIC shoe
-@listings.route("/false/<id>", methods=["GET"])
-def listings_data_sold_false(id):
+# GET ALL sold = false listings FOR SPECIFIC shoe, ALL time
+@listings.route("/false/<id>/all", methods=["GET"])
+def listings_data_sold_false_all(id):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 f"SELECT listings.*, users.username,users.verified FROM listings JOIN users  ON listings.user_id = users.user_id WHERE listings.SHOE_ID = '{id}'  AND listings.listing_date < NOW() AND listings.sold = FALSE  ORDER BY listings.listing_date DESC;"
+            )
+            # transform result
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+
+# GET ALL sold = true listings FOR SPECIFIC shoe, ALL time
+@listings.route("/true/<id>/all", methods=["GET"])
+def listings_data_sold_true_all(id):
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT listing_price,listing_date_close from listings WHERE shoe_id = '{id}' AND sold = true AND listing_date_close < NOW() ORDER BY listing_date_close DESC;"
+            )
+            # transform result
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+
+# GET ALL sold = true listings FOR SPECIFIC shoe, ALL time
+@listings.route("/true/<id>/<time>", methods=["GET"])
+def listings_data_sold_true_time(id, time):
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT listing_price,listing_date_close from listings WHERE shoe_id = '{id}' AND sold = true AND listing_date_close >= NOW() - INTERVAL '{time}' AND listing_date_close < NOW()  ORDER BY listing_date_close DESC;"
             )
             # transform result
             columns = list(cursor.description)
