@@ -126,13 +126,13 @@ def listings_data_sold_true_all(id):
             return results
 
 
-# GET ALL sold = true listings FOR SPECIFIC shoe, ALL time
-@listings.route("/true/<id>/<time>", methods=["GET"])
-def listings_data_sold_true_time(id, time):
+# GET ALL sold = true listings FOR SPECIFIC shoe, 1 Month(1 day average = abt 30 data)
+@listings.route("/true/<id>/one-month", methods=["GET"])
+def listings_data_sold_true_(id):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT listing_price,listing_date_close from listings WHERE shoe_id = '{id}' AND sold = true AND listing_date_close >= NOW() - INTERVAL '{time}' AND listing_date_close < NOW()  ORDER BY listing_date_close DESC;"
+                f"SELECT date_trunc('day', listing_date_close) as date, ROUND(AVG(listing_price)) as avg_price FROM listings WHERE shoe_id = '{id}' AND sold = true AND listing_date_close >= NOW() - INTERVAL '1 month' AND listing_date_close < NOW() GROUP BY date ORDER BY date DESC;"
             )
             # transform result
             columns = list(cursor.description)
