@@ -126,13 +126,55 @@ def listings_data_sold_true_all(id):
             return results
 
 
-# GET ALL sold = true listings FOR SPECIFIC shoe, 1 Month(1 day average = abt 30 data)
-@listings.route("/true/<id>/one-month", methods=["GET"])
-def listings_data_sold_true_(id):
+# GET ALL sold = true listings FOR SPECIFIC shoe, 3 Month(1 day average = abt 90 data)
+@listings.route("/true/<id>/three-month", methods=["GET"])
+def listings_data_sold_true_three_month(id):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT date_trunc('day', listing_date_close) as date, ROUND(AVG(listing_price)) as avg_price FROM listings WHERE shoe_id = '{id}' AND sold = true AND listing_date_close >= NOW() - INTERVAL '1 month' AND listing_date_close < NOW() GROUP BY date ORDER BY date DESC;"
+                f"SELECT date_trunc('day', listing_date_close) as date, ROUND(AVG(listing_price)) as avg_price FROM listings WHERE shoe_id = '{id}' AND sold = true AND listing_date_close >= NOW() - INTERVAL '3 month' AND listing_date_close < NOW() GROUP BY date ORDER BY date DESC;"
+            )
+            # transform result
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+
+# GET ALL sold = true listings FOR SPECIFIC shoe, 6 Month(2 day average = abt 90 data)
+@listings.route("/true/<id>/six-month", methods=["GET"])
+def listings_data_sold_true_six_month(id):
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"WITH two_day_intervals AS (SELECT date_trunc('day', NOW() - INTERVAL '6 month') + (generate_series * 2 || ' day')::interval AS two_day_start FROM generate_series(0, extract(day from NOW() - date_trunc('day', NOW() - INTERVAL '6 month')) / 2)) SELECT two_day_start::date, ROUND(AVG(listing_price), 2) AS avg_listing_price FROM two_day_intervals LEFT JOIN listings ON two_day_start <= listing_date_close AND listing_date_close < two_day_start + INTERVAL '2 day' AND shoe_id = '{id}' AND sold = true GROUP BY two_day_start HAVING AVG(listing_price) IS NOT NULL ORDER BY two_day_start DESC;"
+            )
+            # transform result
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+
+# GET ALL sold = true listings FOR SPECIFIC shoe, 1 Year(4 day average = abt 91 data)
+@listings.route("/true/<id>/one-year", methods=["GET"])
+def listings_data_sold_true_one_year(id):
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"WITH two_day_intervals AS (SELECT date_trunc('day', NOW() - INTERVAL '1 year') + (generate_series * 4 || ' day')::interval AS two_day_start FROM generate_series(0, extract(day from NOW() - date_trunc('day', NOW() - INTERVAL '1 year')) / 4)) SELECT two_day_start::date, ROUND(AVG(listing_price), 4) AS avg_listing_price FROM two_day_intervals LEFT JOIN listings ON two_day_start <= listing_date_close AND listing_date_close < two_day_start + INTERVAL '4 day' AND shoe_id = '{id}' AND sold = true GROUP BY two_day_start HAVING AVG(listing_price) IS NOT NULL ORDER BY two_day_start DESC;"
             )
             # transform result
             columns = list(cursor.description)
