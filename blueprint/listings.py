@@ -63,13 +63,34 @@ def new_listing(id):
 #                 results.append(row_dict)
 #             return results
 
-# GET ALL ROUTE (new) if sold = true with volume of <time>
-@listings.route("/volume/<time>", methods=["GET"])
-def listings_data_volume_all(time):
+# GET ALL ROUTE (new) if sold = true with volume of one year
+@listings.route("/volume/<time>-year", methods=["GET"])
+def listings_data_volume_year(time):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT listings.shoe_id, shoe_brand, shoe_img, shoe_model, MIN(listing_price) as lowest_listing_price, SUM(listing_price) as total_volume FROM listings JOIN shoes ON listings.shoe_id = shoes.shoe_id WHERE sold = true AND listing_date_close >= NOW() - INTERVAL '{time}' AND listing_date_close < NOW() GROUP BY listings.shoe_id, shoe_brand, shoe_img, shoe_model ORDER BY total_volume DESC;"
+                f"SELECT listings.shoe_id, shoe_brand, shoe_img, shoe_model, MIN(listing_price) as lowest_listing_price, SUM(listing_price) as total_volume FROM listings JOIN shoes ON listings.shoe_id = shoes.shoe_id WHERE sold = true AND listing_date_close >= NOW() - INTERVAL '{time} year' AND listing_date_close < NOW() GROUP BY listings.shoe_id, shoe_brand, shoe_img, shoe_model ORDER BY total_volume DESC;"
+            )
+            # transform result
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+
+# GET ALL ROUTE (new) if sold = true with volume of <time> month
+@listings.route("/volume/<time>-month", methods=["GET"])
+def listings_data_volume_month(time):
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT listings.shoe_id, shoe_brand, shoe_img, shoe_model, MIN(listing_price) as lowest_listing_price, SUM(listing_price) as total_volume FROM listings JOIN shoes ON listings.shoe_id = shoes.shoe_id WHERE sold = true AND listing_date_close >= NOW() - INTERVAL '{time} month' AND listing_date_close < NOW() GROUP BY listings.shoe_id, shoe_brand, shoe_img, shoe_model ORDER BY total_volume DESC;"
             )
             # transform result
             columns = list(cursor.description)
