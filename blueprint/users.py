@@ -18,19 +18,18 @@ def new_user():
     data = request.get_json()
     print(data)
     data_values = list(data.values())
-    print("data_values",data_values)
+    print("data_values", data_values)
     email = data["email"]
     with connection:
         with connection.cursor() as cursor:
-            try: 
+            try:
                 cursor.execute(
-                "INSERT INTO users (first_name,last_name,email,password,country) VALUES (%s,%s,%s,%s,%s) ",
-                data_values,
-            )
+                    "INSERT INTO users (first_name,last_name,email,password,country) VALUES (%s,%s,%s,%s,%s) ",
+                    data_values,
+                )
                 return {"status": f"User {email} created"}, 201
             except Exception as error:
-                return {"error": f'{error}'}, 400
-      
+                return {"error": f"{error}"}, 400
 
 
 # GET ALL ROUTE
@@ -72,9 +71,33 @@ def one_user_data(id):
                 results.append(row_dict)
             return results
 
+
+# Find by username
+@users.route("/findbyusername/<username>", methods=["GET"])
+def one_user_username(username):
+    results = []
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT user_id, username, first_name, last_name, country,verified, followings, followers, joined_date FROM users WHERE username = '{username}';"
+            )
+            # result = cursor.fetchone()[0]
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            print(result)
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
+
+
 # Find by email
 @users.route("/findbyemail/<email>", methods=["GET"])
-def one_user_existence(email):
+def one_user_email(email):
     results = []
     with connection:
         with connection.cursor() as cursor:
@@ -92,7 +115,8 @@ def one_user_existence(email):
                 results.append(row_dict)
             return results
 
-# Verify login 
+
+# Verify login
 @users.route("/login", methods=["POST"])
 def verify_user():
     data = request.get_json()
@@ -100,14 +124,14 @@ def verify_user():
     email = data["email"]
     with connection:
         with connection.cursor() as cursor:
-            try: 
+            try:
                 cursor.execute(
-                "SELECT user_id, email, password FROM users WHERE email=%s AND password=%s",
-                data_values,
+                    "SELECT user_id, email, password FROM users WHERE email=%s AND password=%s",
+                    data_values,
                 )
                 result = cursor.fetchall()
                 id = result[0][0]
-                return {"id":f"{id}","msg": f"User {email} logged in!"}, 200
+                return {"id": f"{id}", "msg": f"User {email} logged in!"}, 200
             except Exception as error:
                 return {"error": f"{error}"}, 400
 
