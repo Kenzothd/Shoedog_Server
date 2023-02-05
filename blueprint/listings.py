@@ -70,7 +70,7 @@ def listings_data_profile_sold_false(username):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT l.listing_id, s.shoe_brand,s.shoe_model,s.shoe_img,l.shoe_size,l.listing_date as date, l.listing_price from listings l JOIN shoes s ON l.shoe_id = s.shoe_id  JOIN users u ON l.user_id = u.user_id  WHERE sold=false AND u.username='{username}' ORDER BY l.listing_date DESC LIMIT 10;"
+                f"SELECT l.listing_id, s.shoe_id, s.shoe_brand,s.shoe_model,s.shoe_img,l.shoe_size,l.listing_date as date, l.listing_price from listings l JOIN shoes s ON l.shoe_id = s.shoe_id  JOIN users u ON l.user_id = u.user_id  WHERE sold=false AND u.username='{username}' ORDER BY l.listing_date DESC LIMIT 10;"
             )
             # transform result
             columns = list(cursor.description)
@@ -91,7 +91,7 @@ def listings_data_profile_sold_true(username):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT l.listing_id, s.shoe_brand,s.shoe_model,s.shoe_img,l.shoe_size,l.listing_date as date, l.listing_price from listings l JOIN shoes s ON l.shoe_id = s.shoe_id  JOIN users u ON l.user_id = u.user_id  WHERE sold=true AND u.username='{username}' ORDER BY l.listing_date DESC LIMIT 10;"
+                f"SELECT l.listing_id, s.shoe_id, s.shoe_brand,s.shoe_model,s.shoe_img,l.shoe_size,l.listing_date as date, l.listing_price from listings l JOIN shoes s ON l.shoe_id = s.shoe_id  JOIN users u ON l.user_id = u.user_id  WHERE sold=true AND u.username='{username}' ORDER BY l.listing_date DESC LIMIT 10;"
             )
             # transform result
             columns = list(cursor.description)
