@@ -35,7 +35,6 @@ def new_user():
 # GET ALL ROUTE
 @users.route("/", methods=["GET"])
 def users_data():
-
     with connection:
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM users")

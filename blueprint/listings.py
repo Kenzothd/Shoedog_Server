@@ -28,7 +28,6 @@ connection = psycopg2.connect(url)
 @listings.route("/<id>", methods=["POST"])
 def new_listing(id):
     data = request.get_json()
-    shoe_brand = data["shoe_brand"]
     shoe_model = data["shoe_model"]
     shoe_size = data["shoe_size"]
     listing_price = data["listing_price"]
@@ -36,11 +35,19 @@ def new_listing(id):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_brand='{shoe_brand}' AND shoe_model='{shoe_model}' AND shoe_size='{shoe_size}') INSERT INTO listings (user_listing_id,shoe_id,listing_price) SELECT '{id}',shoe_id,'{listing_price}' FROM rows RETURNING listings.*;"
+                    f"WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_model='{shoe_model}') INSERT INTO listings (user_id,shoe_id,shoe_size,listing_price) SELECT {id}, shoe_id, '{shoe_size}', {listing_price} FROM rows RETURNING listings.*;"
                 )
+                # transform result
+                columns = list(cursor.description)
+                result = cursor.fetchall()
+                # make dict
                 results = []
-                check_alert(cursor, results)
-            return results, 201
+                for row in result:
+                    row_dict = {}
+                    for i, col in enumerate(columns):
+                        row_dict[col.name] = row[i]
+                    results.append(row_dict)
+                return results, 201
         except Exception as error:
             return {"error": f"{error}"}, 400
 
@@ -404,11 +411,11 @@ def one_listing_data(id):
 def update_one_listing(id):
     data = request.get_json()
     data_values = list(data.values())
-    data_values.append(id)
+    data_values.append(int(id))
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE listings SET listing_price=%s,shoe_id=%s,sold=%s,user_listing_id=%s WHERE listing_id=%s",
+                "WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_model=%s) UPDATE listings SET shoe_id=(SELECT shoe_id FROM rows),shoe_size=%s,listing_price=%s WHERE listing_id=%s",
                 data_values,
             )
         return {"msg": f"Listing id {id} updated"}

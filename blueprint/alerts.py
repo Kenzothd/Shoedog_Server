@@ -26,7 +26,7 @@ connection = psycopg2.connect(url)
 
 def check_alert(cursor, results, userId):
     cursor.execute(
-        f"SELECT l.user_id, u.username, u.verified, s.shoe_img, s.shoe_model, a.shoe_size, l.listing_id, l.sold, a.alert_price, l.listing_price, l.listing_date FROM alerts a JOIN listings l ON l.shoe_id = a.shoe_id JOIN shoes s ON l.shoe_id = s.shoe_id JOIN users u ON l.user_id = u.user_id WHERE a.alert_price >= l.listing_price AND l.sold = false AND l.shoe_size = a.shoe_size AND a.user_id = '{userId}';"
+        f"SELECT l.user_id, u.username, u.verified, s.shoe_img, s.shoe_model, a.shoe_size, l.listing_id, l.sold, a.alert_price, l.listing_price, l.listing_date FROM alerts a JOIN listings l ON l.shoe_id = a.shoe_id JOIN shoes s ON l.shoe_id = s.shoe_id JOIN users u ON l.user_id = u.user_id WHERE a.alert_price >= l.listing_price AND l.sold = false AND l.shoe_size = a.shoe_size AND a.user_id = '{userId}' AND a.user_id != l.user_id;;"
     )
     # transform result
     columns = list(cursor.description)
