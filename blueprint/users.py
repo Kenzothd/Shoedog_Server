@@ -120,17 +120,22 @@ def one_user_email(email):
 def verify_user():
     data = request.get_json()
     data_values = list(data.values())
-    email = data["email"]
+    print(data_values)
+    username = data["username"]
     with connection:
         with connection.cursor() as cursor:
             try:
                 cursor.execute(
-                    "SELECT user_id, email, password FROM users WHERE email=%s AND password=%s",
+                    "SELECT user_id, username FROM users WHERE username=%s AND password=%s",
                     data_values,
                 )
                 result = cursor.fetchall()
                 id = result[0][0]
-                return {"id": f"{id}", "msg": f"User {email} logged in!"}, 200
+                return {
+                    "userid": f"{id}",
+                    "username": f"{username}",
+                    "msg": f"User {username} logged in!",
+                }, 200
             except Exception as error:
                 return {"error": f"{error}"}, 400
 
