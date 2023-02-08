@@ -32,6 +32,7 @@ for i in range(10):
         time.sleep(5)
 if connection:
     # perform database operations
+    time.sleep(1800)  # wait for 30 minutes before reconnecting
     connection.close()
 else:
     print("Unable to connect to the database")

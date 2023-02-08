@@ -52,23 +52,25 @@ def new_listing(id):
             return {"error": f"{error}"}, 400
 
 
-# GET ALL ROUTE (old)
-# @listings.route("/", methods=["GET"])
-# def listings_data():
-#     with connection:
-#         with connection.cursor() as cursor:
-#             cursor.execute("SELECT * FROM listings")
-#             # transform result
-#             columns = list(cursor.description)
-#             result = cursor.fetchall()
-#             # make dict
-#             results = []
-#             for row in result:
-#                 row_dict = {}
-#                 for i, col in enumerate(columns):
-#                     row_dict[col.name] = row[i]
-#                 results.append(row_dict)
-#             return results
+# GET ALL ROUTE
+@listings.route("/", methods=["GET"])
+def listings_data():
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT s.shoe_id, s.shoe_brand, s.shoe_img, s.shoe_model, s.shoe_release_date, s.shoe_retail_price, MIN(l.listing_price) as lowest_listing_price FROM shoes s JOIN listings l on l.shoe_id = s.shoe_id WHERE s.shoe_release_date <= NOW() AND l.sold = false GROUP BY s.shoe_id;"
+            )
+            # transform result
+            columns = list(cursor.description)
+            result = cursor.fetchall()
+            # make dict
+            results = []
+            for row in result:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col.name] = row[i]
+                results.append(row_dict)
+            return results
 
 
 # GET listings by username = "AMart" AND sold = false(Limit 10)

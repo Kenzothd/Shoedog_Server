@@ -83,7 +83,6 @@ def one_user_username(username):
             # result = cursor.fetchone()[0]
             columns = list(cursor.description)
             result = cursor.fetchall()
-            print(result)
             # make dict
             results = []
             for row in result:
@@ -120,7 +119,6 @@ def one_user_email(email):
 def verify_user():
     data = request.get_json()
     data_values = list(data.values())
-    print(data_values)
     username = data["username"]
     with connection:
         with connection.cursor() as cursor:
