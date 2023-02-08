@@ -1,5 +1,6 @@
 import os
 import psycopg2
+import time
 from dotenv import load_dotenv
 from flask import Flask, request, Blueprint
 from flask_cors import CORS, cross_origin
@@ -21,7 +22,19 @@ app.register_blueprint(alerts, url_prefix="/alerts")
 # cors = CORS(app, resources={r'*': {'origins': 'http://localhost:3000'}})
 
 url = os.environ.get("DATABASE_URL")  # gets variables from environment
-connection = psycopg2.connect(url)
+connection = None
+for i in range(10):
+    try:
+        psycopg2.connect(url)
+        break
+    except psycopg2.OperationalError as e:
+        print("Cannot connect to database, retrying in 5 seconds...")
+        time.sleep(5)
+if connection:
+    # perform database operations
+    connection.close()
+else:
+    print("Unable to connect to the database")
 
 
 @app.route("/", methods=["GET", "POST"])
