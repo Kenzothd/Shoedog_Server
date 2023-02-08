@@ -57,7 +57,6 @@ def alert_check(userId):
 @alerts.route("/<id>", methods=["POST"])
 def new_alert(id):
     data = request.get_json()
-    shoe_brand = data["shoe_brand"]
     shoe_model = data["shoe_model"]
     shoe_size = data["shoe_size"]
     alert_price = data["alert_price"]
@@ -65,10 +64,18 @@ def new_alert(id):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_brand='{shoe_brand}' AND shoe_model='{shoe_model}' AND shoe_size='{shoe_size}') INSERT INTO alerts (user_alert_id,shoe_id,alert_price) SELECT '{id}',shoe_id,'{alert_price}' FROM rows RETURNING alerts.*;"
+                    f"WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_model='{shoe_model}') INSERT INTO alerts (user_id,shoe_id,shoe_size,alert_price) SELECT {id},shoe_id,'{shoe_size}',{alert_price} FROM rows RETURNING alerts.*;"
                 )
+                # transform result
+                columns = list(cursor.description)
+                result = cursor.fetchall()
+                # make dict
                 results = []
-                check_alert(cursor, results)
+                for row in result:
+                    row_dict = {}
+                    for i, col in enumerate(columns):
+                        row_dict[col.name] = row[i]
+                    results.append(row_dict)
                 return results, 201
         except Exception as error:
             return {"error": f"{error}"}, 400
@@ -164,7 +171,7 @@ def update_one_alert(id):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE alerts SET alert_price=%s,shoe_id=%s,user_alert_id=%s WHERE alert_id=%s",
+                "WITH rows AS (SELECT shoe_id FROM shoes WHERE shoe_model=%s) UPDATE alerts SET shoe_id=(SELECT shoe_id FROM rows), shoe_size=%s, alert_price=%s WHERE alert_id=%s",
                 data_values,
             )
         return {"msg": f"Alert id {id} updated"}
