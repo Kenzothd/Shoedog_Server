@@ -22,16 +22,19 @@ app.register_blueprint(alerts, url_prefix="/alerts")
 # cors = CORS(app, resources={r'*': {'origins': 'http://localhost:3000'}})
 
 url = os.environ.get("DATABASE_URL")  # gets variables from environment
-
 connection = None
-while True:
+for i in range(10):
     try:
-        connection = psycopg2.connect(url)
-        # perform database operations
-        time.sleep(1800)  # wait for 30 minutes before reconnecting
+        psycopg2.connect(url)
+        break
     except psycopg2.OperationalError as e:
         print("Cannot connect to database, retrying in 5 seconds...")
         time.sleep(5)
+if connection:
+    # perform database operations
+    connection.close()
+else:
+    print("Unable to connect to the database")
 
 
 @app.route("/", methods=["GET", "POST"])
