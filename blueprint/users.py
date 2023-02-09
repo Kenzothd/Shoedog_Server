@@ -19,15 +19,19 @@ def new_user():
     print(data)
     data_values = list(data.values())
     print("data_values", data_values)
+    username = data["username"]
     email = data["email"]
     with connection:
         with connection.cursor() as cursor:
             try:
                 cursor.execute(
-                    "INSERT INTO users (first_name,last_name,email,password,country) VALUES (%s,%s,%s,%s,%s) ",
+                    "INSERT INTO users (first_name,last_name,email,username,password,country) VALUES (%s,%s,%s,%s,%s,%s) ",
                     data_values,
                 )
-                return {"status": f"User {email} created"}, 201
+                return {
+                    "username": f"{username}",
+                    "status": f"User {email} created",
+                }, 201
             except Exception as error:
                 return {"error": f"{error}"}, 400
 
