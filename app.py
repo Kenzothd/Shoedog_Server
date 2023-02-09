@@ -23,23 +23,26 @@ app.register_blueprint(alerts, url_prefix="/alerts")
 
 url = os.environ.get("DATABASE_URL")  # gets variables from environment
 connection = None
-for i in range(10):
-    try:
-        psycopg2.connect(url)
-        break
-    except psycopg2.OperationalError as e:
-        print("Cannot connect to database, retrying in 5 seconds...")
-        time.sleep(5)
-if connection:
-    # perform database operations
-    time.sleep(1800)  # wait for 30 minutes before reconnecting
-    connection.close()
-else:
-    print("Unable to connect to the database")
+
+
+def connect_to_database():
+    global connection
+    connection = psycopg2.connect(url)
+
+
+connect_to_database()
 
 
 @app.route("/", methods=["GET", "POST"])
 def home():
+    try:
+        # perform database operations here
+        pass
+    except psycopg2.OperationalError as e:
+        print("Cannot connect to database, retrying...")
+        connection.close()
+        connect_to_database()
+
     return {"home": "This is the homepage"}, 200
 
 
