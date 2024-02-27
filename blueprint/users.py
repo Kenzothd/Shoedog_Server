@@ -12,6 +12,7 @@ CORS(users)
 url = os.environ.get("DATABASE_URL")
 connection = psycopg2.connect(url)
 
+
 # CREATE ROUTE
 @users.route("/", methods=["POST"])
 def new_user():
