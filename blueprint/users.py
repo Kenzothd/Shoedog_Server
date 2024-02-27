@@ -1,5 +1,6 @@
 import os
-from tkinter import EXCEPTION
+
+# from tkinter import EXCEPTION
 import psycopg2
 from flask import Blueprint, request
 from dotenv import load_dotenv
