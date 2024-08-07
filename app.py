@@ -1,4 +1,5 @@
 import os
+from supabase import create_client, Client
 import psycopg2
 import time
 from dotenv import load_dotenv
@@ -21,16 +22,23 @@ app.register_blueprint(listings, url_prefix="/listings")
 app.register_blueprint(alerts, url_prefix="/alerts")
 # cors = CORS(app, resources={r'*': {'origins': 'http://localhost:3000'}})
 
-url = os.environ.get("DATABASE_URL")  # gets variables from environment
-connection = None
+# url = os.environ.get("DATABASE_URL")  # old
 
+url: str = os.environ.get("SUPABASE_URL")  # gets variables from environment
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
-def connect_to_database():
-    global connection
-    connection = psycopg2.connect(url)
+#### Old ####
 
+# connection = None
 
-connect_to_database()
+# def connect_to_database():
+#     global connection
+#     connection = psycopg2.connect(supabase)
+
+# connect_to_database()
+
+#############
 
 
 @app.route("/", methods=["GET", "POST"])
