@@ -22,23 +22,21 @@ app.register_blueprint(listings, url_prefix="/listings")
 app.register_blueprint(alerts, url_prefix="/alerts")
 # cors = CORS(app, resources={r'*': {'origins': 'http://localhost:3000'}})
 
-# url = os.environ.get("DATABASE_URL")  # old
+url = os.environ.get("DATABASE_URL")  # gets variables from environment
 
-url: str = os.environ.get("SUPABASE_URL")  # gets variables from environment
-key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+# url: str = os.environ.get("SUPABASE_URL")  # gets variables from environment
+# key: str = os.environ.get("SUPABASE_KEY")
+# supabase: Client = create_client(url, key)
 
-#### Old ####
+connection = None
 
-# connection = None
 
-# def connect_to_database():
-#     global connection
-#     connection = psycopg2.connect(supabase)
+def connect_to_database():
+    global connection
+    connection = psycopg2.connect(url)
 
-# connect_to_database()
 
-#############
+connect_to_database()
 
 
 @app.route("/", methods=["GET", "POST"])
