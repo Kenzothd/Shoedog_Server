@@ -29,6 +29,7 @@ def connect_to_database():
     global connection
     connection = psycopg2.connect(url)
 
+
 connect_to_database()
 
 
